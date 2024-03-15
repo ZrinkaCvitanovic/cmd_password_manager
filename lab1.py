@@ -10,8 +10,7 @@ from Crypto.Util.Padding import pad
 from Crypto.Protocol.KDF import PBKDF2
 
 #pip install pycryptodome
-data = dict()
-salt = b'longsaltthatshouldbesecureenoughforthepurposofwritingalabexcercise'  # Salt for key derivation
+salt = b'salt'  # Salt for key derivation
 iterations = 100000  # Number of iterations for key derivation
 key_length = 32  # AES key length (256 bits)
 
@@ -41,12 +40,14 @@ class PasswordManager:
 
     def put(self, service, password):
         hashed_service = hashlib.sha256( service.encode() ).digest()
-        if hashed_service in data.keys():
-            print( f"Service '{service}' already exists." )
-            return
+        with open( self.password_file.name, "rb" ) as file:
+            for line in file:
+                current_service, _ = line.strip().split( b" : ", 1 )
+                if current_service == hashed_service:
+                    print( f"Service '{service}' already exists." )
+                    return
 
         encrypted_data = self.encrypt_data(password)
-        data[hashed_service] = encrypted_data
         with open(self.password_file.name, "ab") as file:
             file.write( hashed_service + b" : " + encrypted_data + b"\n" )
 
@@ -61,8 +62,8 @@ class PasswordManager:
                 if current_service == hashed_service:
                     plaintext_pass = self.decrypt_data( encrypted_pass )
                     print( f"Password for {service}: {plaintext_pass}" )
-                    return  # Exit after finding the password
-        print( f"No password found for {service}." )
+                else:
+                    print( f"No password found for {service}." )
 
     def verify_master_password(self, input_password):
         input_password_hash = hashlib.sha256( input_password.encode() ).digest()
@@ -73,9 +74,9 @@ def main():
     password_manager = None
     if sys.argv[1] == "init":
         master_password = sys.argv[2]
-        #current = time.strftime( "%Y%m%d-%H%M%S" )
-        #password_file = open( "passwords" + current + ".enc", "w" )  # zato da svaki password file dobije jedinstveni id
-        password_file = open( "passwords.txt", "w" )  # zato da svaki password file dobije jedinstveni id
+        current = time.strftime( "%Y%m%d-%H%M%S" )
+        password_file = open( "passwords" + current + ".enc", "w" )  # zato da svaki password file dobije jedinstveni id
+        #password_file = open( "passwords.txt", "w" )  # zato da svaki password file dobije jedinstveni id
         password_manager = PasswordManager( password_file, master_password )
     while True:
         command = input().strip().split()
@@ -91,6 +92,8 @@ def main():
                 password_manager.put( command[2], command[3] )
             elif command[0] == "get":
                 password_manager.get( command[2] )
+            else:
+                print( "Invalid command." )
         else:
             print( "Invalid command." )
 

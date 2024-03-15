@@ -11,7 +11,7 @@ from Crypto.Protocol.KDF import PBKDF2
 
 #pip install pycryptodome
 data = dict()
-salt = b'salt'  # Salt for key derivation
+salt = b'longsaltthatshouldbesecureenoughforthepurposofwritingalabexcercise'  # Salt for key derivation
 iterations = 100000  # Number of iterations for key derivation
 key_length = 32  # AES key length (256 bits)
 
@@ -40,7 +40,6 @@ class PasswordManager:
         return decrypted_text
 
     def put(self, service, password):
-        print("put")
         hashed_service = hashlib.sha256( service.encode() ).digest()
         if hashed_service in data.keys():
             print( f"Service '{service}' already exists." )
@@ -48,16 +47,22 @@ class PasswordManager:
 
         encrypted_data = self.encrypt_data(password)
         data[hashed_service] = encrypted_data
+        with open(self.password_file.name, "ab") as file:
+            file.write( hashed_service + b" : " + encrypted_data + b"\n" )
+
         print(f"Password for {service} added successfully.")
 
     def get(self, service):
-        print( "get" )
         hashed_service = hashlib.sha256( service.encode() ).digest()
-        if hashed_service in data.keys():
-                plaintext_pass = self.decrypt_data(data[hashed_service])
-                print( f"Password for {service}: {plaintext_pass}" )
-        else:
-            print( f"No password found for {service}." )
+        with open( self.password_file.name, "rb" ) as file:
+            lines = file.readlines()
+            for line in lines:
+                current_service, encrypted_pass = line.strip().split( b" : " )
+                if current_service == hashed_service:
+                    plaintext_pass = self.decrypt_data( encrypted_pass )
+                    print( f"Password for {service}: {plaintext_pass}" )
+                    return  # Exit after finding the password
+        print( f"No password found for {service}." )
 
     def verify_master_password(self, input_password):
         input_password_hash = hashlib.sha256( input_password.encode() ).digest()

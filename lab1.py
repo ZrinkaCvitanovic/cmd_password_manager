@@ -9,8 +9,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad
 from Crypto.Protocol.KDF import PBKDF2
 
-#pip install pycryptodome
-salt = b'salt'  # Salt for key derivation
+salt = b'verylongsaltthatithinkissufficientforalabexcercise'  # Salt for key derivation
 iterations = 100000  # Number of iterations for key derivation
 key_length = 32  # AES key length (256 bits)
 
@@ -41,9 +40,10 @@ class PasswordManager:
     def put(self, service, password):
         hashed_service = hashlib.sha256( service.encode() ).digest()
         with open( self.password_file.name, "rb" ) as file:
-            for line in file:
-                current_service, _ = line.strip().split( b" : ", 1 )
-                if current_service == hashed_service:
+            lines = file.readlines()
+            for line in lines:
+                current_service = line.strip().split( b" : ",)[0]
+                if current_service is not None and current_service == hashed_service:
                     print( f"Service '{service}' already exists." )
                     return
 
@@ -62,8 +62,8 @@ class PasswordManager:
                 if current_service == hashed_service:
                     plaintext_pass = self.decrypt_data( encrypted_pass )
                     print( f"Password for {service}: {plaintext_pass}" )
-                else:
-                    print( f"No password found for {service}." )
+                    return
+            print( f"No password found for {service}." )
 
     def verify_master_password(self, input_password):
         input_password_hash = hashlib.sha256( input_password.encode() ).digest()
@@ -74,9 +74,13 @@ def main():
     password_manager = None
     if sys.argv[1] == "init":
         master_password = sys.argv[2]
-        current = time.strftime( "%Y%m%d-%H%M%S" )
-        password_file = open( "passwords" + current + ".enc", "w" )  # zato da svaki password file dobije jedinstveni id
-        #password_file = open( "passwords.txt", "w" )  # zato da svaki password file dobije jedinstveni id
+        name = input( "Enter a database you wish to access (leave empty to create a new database with default name): " )
+        if name == "":
+            current = time.strftime( "%Y%m%d-%H%M%S" )
+            password_file = open( "passwords" + current + ".enc",
+                                  "w" )  # zato da svaki password file dobije jedinstveni id
+        else:
+            password_file = open( name, "a" )
         password_manager = PasswordManager( password_file, master_password )
     while True:
         command = input().strip().split()

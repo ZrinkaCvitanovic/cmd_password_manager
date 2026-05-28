@@ -1,24 +1,28 @@
 # Password_Manager
 
-This is a simplified version of a password manager tool used from command line.   
+ This repository is a lab excercise from course [Computer Security](https://www.fer.unizg.hr/en/course/comsec) at [Faculty of Electrical Engineering and Computing](https://www.fer.unizg.hr/en), University of Zagreb. This is a simplified version of a password manager tool used from command line.   
 
 ## Usage
-initialising a database:  
-**python main.py init [master password]**  
+Initialising a database:  
+
+    python main.py init [master password] 
 
 After this step you are prompted to enter the name of a database or leave empty if you wish to use the default name (timestamp of creation). Custom names are useful if you wish to use a database multiple times. 
 
-adding a new password:  
-**put [master password] [service] [password you wish to store]**  
+Adding a new password:  
 
-retrieving a password:  
-**get [master password] [service]**
+    put [master password] [service] [password you wish to store]
+
+Retrieving a password:  
+
+    get [master password] [service]
 
 Every time data is fetched or added, a master password must be provided in order to ensure that a legitimate user is accessing a database. Make sure your master password is not prone to guessing. 
 
 ## Requirements
 You need to install **pycryptodome** library in your virtual environment:  
-pip3 install pycryptodome 
+
+    pip3 install pycryptodome 
 
 ## Explanation  
 Passwords and services are stored in an encrypted file. Encryption is performed using AES encryption and CBC mode. For encrypting each entry an initialisation vector of 16 random bytes is used along with the master password that is provided from every user input. This method also makes sure that the length of a password is not obvious from the length of an encrypted entry. Furthermore, even if two passwords are the same, their encrypted entries are completely different. This is also a pivotal security requirement in today's systems. 
